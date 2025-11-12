@@ -8,7 +8,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-import src.data.constants as constants
+import src.data.parameters as parameters
 
 
 def sample_points_in_polygon(polygon, n_points, batch_size=50000):
@@ -30,7 +30,7 @@ def sample_points_in_polygon(polygon, n_points, batch_size=50000):
 
 def get_state_polygons():
     logging.info("Fetching state polygons from OSMnx...")
-    state_names = [val for key, vals in constants.region_to_states_map.items() for val in vals]
+    state_names = [val for key, vals in parameters.region_to_states_map.items() for val in vals]
     state_gdfs = []
     for state in state_names:
         state_gdf = ox.geocode_to_gdf(f"{state}, USA", which_result=1)
@@ -44,7 +44,7 @@ def sample_locations(n_locations: int):
     all_states_gdf = get_state_polygons()
     state_to_region_map = {
         state: region
-        for region, states in constants.region_to_states_map.items()
+        for region, states in parameters.region_to_states_map.items()
         for state in states
     }
     n_states = len(all_states_gdf)
@@ -63,20 +63,26 @@ def sample_locations(n_locations: int):
         )
         samples.append(points_df)
     all_samples_df = pd.concat(samples, ignore_index=True)
-    return all_samples_df
+    return all_samples_df[:n_locations]
 
 def sample_access_points(n_devices: int):
     logging.info("Sampling access point attributes...")
-    bands = np.random.choice(constants.bands, size=n_devices)
-    vendors = np.random.choice(constants.vendors, size=n_devices)
-    ssids = np.random.choice(constants.ssid_types, size=n_devices)
-    ap_id = [f"AP{str(_).zfill(9)}" for _ in range(n_devices)]
+
+    bands = np.random.choice(parameters.bands, size=n_devices)
+    vendor_sources = np.random.choice(parameters.vendor_sources, size=n_devices)
+    vendor_names = np.random.choice(parameters.vendor_names, size=n_devices)
+    models = np.random.choice(parameters.models, size=n_devices)
+    ssids = np.random.choice(parameters.ssid_types, size=n_devices)
+    ap_id = list(range(n_devices))
+
     return pd.DataFrame({
         "ap_id": ap_id,
         "band": bands,
-        "vendor_source": vendors,
+        "vendor_source": vendor_sources,
+        "vendor_name": vendor_names,
+        "model": models,
         "ssid": ssids,
-    })
+    })[:n_devices]
 
 
 def generate_data(n_points: int):
