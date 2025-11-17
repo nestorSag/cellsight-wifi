@@ -9,6 +9,9 @@ import src.data.record_generator as rec_gen
 import pandas as pd
 import toml
 
+from src.utils import timed, set_logging
+
+@timed
 def generate_data(
     n_aps: int,
     n_sessions_per_ap: int=2,
@@ -66,7 +69,9 @@ def bump_current_time(hours: int = 1):
     config["params"]["current_time"] = new_time.isoformat()
     with open("data/.metadata/config.toml", "w") as f:
         toml.dump(config, f)
-            
+
+
+@timed
 def persist_data(
     n_aps: int,
     n_sessions_per_ap: int=2,
@@ -85,7 +90,8 @@ def persist_data(
     
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    # log to stdout and append to log file
+    set_logging()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--n_aps",

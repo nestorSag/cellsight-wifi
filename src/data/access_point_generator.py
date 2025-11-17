@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 import src.data.parameters as parameters
-
+from src.utils import timed, set_logging
 
 def sample_points_in_polygon(polygon, n_points, batch_size=50000):
     """Uniformly sample n_points inside a shapely Polygon."""
@@ -85,6 +85,7 @@ def sample_access_points(n_devices: int):
     })[:n_devices]
 
 
+@timed
 def generate_data(n_points: int):
     # Sample user locations
     user_locations = sample_locations(n_points)
@@ -97,7 +98,7 @@ def generate_data(n_points: int):
     return data
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    set_logging()
     parser = argparse.ArgumentParser(description="Generate userbase data.")
     parser.add_argument(
         "--n_points",
