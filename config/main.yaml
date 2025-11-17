@@ -1,0 +1,17 @@
+colnames:
+  ap_id: ap_id
+  session_id: session_id
+  lon: longitude
+  lat: latitude
+  time: timestamp
+  band: band
+  channel: channel
+  state: state
+  region: region
+
+db:
+  user: cellsight
+  password: ${oc.env:DB_PASSWORD}
+  db: cellsight
+  host: localhost
+  port: ${oc.env:DB_PORT}
