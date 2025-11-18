@@ -19,13 +19,13 @@ hourly-batch: data/.metadata/access_points/data.parquet
 		--n_aps=$(n_points)
 
 daily-batch:
-	for i in $$(seq 2 24); do \
+	for i in $$(seq 1 24); do \
 		make hourly-batch; \
 		make ingestion; \
 	done;
 
 weekly-batch:
-	for i in $$(seq 2 7); do \
+	for i in $$(seq 1 7); do \
 		make daily-batch; \
 	done;
 	
@@ -49,7 +49,8 @@ questdb:
 	  -p 8812:8812 \
 	  -p 9003:9003 \
 	  -e QDB_LINE_HTTP_ENABLED=true \
-	  -e QDB_VM_MAX_MAP_COUNT=1048576 \
+	  -e QDB_MAX_MAP_COUNT=1048576 \
+	  -v $$(pwd)/data/questdb:/var/lib/questdb \
 	  questdb/questdb:9.2.0
 
 backend:
