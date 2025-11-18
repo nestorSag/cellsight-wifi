@@ -7,7 +7,7 @@ tag=latest
 .PHONY: ap-data hourly-batch preprocess env questdb
 
 data/.metadata/access_points/data.parquet: src/data/access_point_generator.py
-	$(CONDA) run -p ./env python -m src.data.access_point_generator \
+	$(CONDA) run -p $$(pwd)/env python -m src.data.access_point_generator \
 		--n_points=$(n_points) \
 		--output_path=data/.metadata/access_points/data.parquet
 
@@ -15,11 +15,19 @@ ap-data: data/.metadata/access_points/data.parquet
 	@echo "Access points data generated at data/.metadata/access_points/data.parquet"
 
 hourly-batch: data/.metadata/access_points/data.parquet
-	$(CONDA) run -p ./env python -m src.data.data_generator \
+	$(CONDA) run -p $$(pwd)/env python -m src.data.data_generator \
 		--n_aps=$(n_points)
 
-preprocess: 
-	$(CONDA) run -p ./env python -m src.preproc
+daily-batch:
+	for i in $$(seq 2 24); do \
+		make hourly-batch; \
+		make ingestion; \
+	done;
+
+ingestion: 
+	$(CONDA) run -p $$(pwd)/env python -m src.preproc
+
+
 env/bin/python:
 	$(CONDA) create -p ./env -f environment.yaml -y
 
@@ -36,4 +44,5 @@ questdb:
 	  -p 8812:8812 \
 	  -p 9003:9003 \
 	  -e QDB_LINE_HTTP_ENABLED=true \
+	  -e QDB_VM_MAX_MAP_COUNT=1048576 \
 	  questdb/questdb:9.2.0

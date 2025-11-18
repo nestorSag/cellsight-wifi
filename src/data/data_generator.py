@@ -38,23 +38,25 @@ def generate_data(
         logging.info("Reading existing access point data...")
         ap_data = pd.read_parquet(ap_file_path)
 
+    ap_data['ap_id'] = ap_data['ap_id'].astype(int)
     logging.info("Generating record data...")
-    rec_data = rec_gen.generate_records(
+    record_generator = rec_gen.generate_records(
         n_aps=n_aps,
         base_time=base_time,
         n_sessions_per_ap=n_sessions_per_ap,
         n_records_per_session=n_records_per_session,
     )
-    rec_data['ap_id'] = rec_data['ap_id'].astype(int)
-    ap_data['ap_id'] = ap_data['ap_id'].astype(int)
 
-    logging.info("Merging record and access point data...")
-    full_data = rec_data.merge(
-        ap_data,
-        on="ap_id",
-        how="left",
-    )
-    return full_data
+    for rec_data in record_generator:
+        rec_data['ap_id'] = rec_data['ap_id'].astype(int)
+
+        logging.info("Merging record and access point data...")
+        data_chunk = rec_data.merge(
+            ap_data,
+            on="ap_id",
+            how="left",
+        )
+        yield data_chunk
 
 def get_current_time():
     with open("data/.metadata/config.toml", "r") as f:
@@ -78,14 +80,15 @@ def persist_data(
     n_records_per_session: int=1,
 ):
     base_time = get_current_time()
-    data = generate_data(
+    output_path = Path(f"data/csv/{base_time}.csv")
+    data_generator = generate_data(
         n_aps=n_aps,
         n_sessions_per_ap=n_sessions_per_ap,
         n_records_per_session=n_records_per_session,
     )
-    output_path = Path(f"data/csv/{base_time}.csv")
-    logging.info(f"Persisting {len(data)} records to {output_path}...")
-    data.to_csv(output_path, index=False)
+    for batch in data_generator:
+        logging.info(f"Persisting {len(batch)} records to {output_path}...")
+        batch.to_csv(output_path, index=False, mode='a', header=not output_path.exists())
     bump_current_time(hours=1)
     
 

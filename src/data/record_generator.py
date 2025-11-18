@@ -11,8 +11,30 @@ def generate_records(
     base_time: datetime,
     n_sessions_per_ap: int=2,
     n_records_per_session: int=1,
+    batch_size: int=1_000_000,
 ):
+    """
+    Generator that yields batches of records as DataFrames.
+    
+    Args:
+        n_aps: Number of access points
+        base_time: Base timestamp for record generation
+        n_sessions_per_ap: Number of sessions per access point
+        n_records_per_session: Number of records per session
+        batch_size: Maximum number of records per batch (default: 1,000,000)
+        
+    Yields:
+        pd.DataFrame: Batches of records with size <= batch_size
+    """
     records = []
+    columns = [
+        "session_id", "user_mac", "timestamp", "rssi", "noise_floor", "snr",
+        "bytes_in", "bytes_out", "packets_in", "packets_out", "throughput_mbps",
+        "retries", "errors", "tx_power", "rx_power", "tx_rate", "rx_rate",
+        "mcs_tx", "mcs_rx", "assoc_clients", "roam_events", "ap_temperature",
+        "uptime_sec", "fw_version",  "channel", "channel_width", "ap_id",
+    ]
+    
     for i in range(n_aps):
         for j in range(n_sessions_per_ap):
             ap_id = i
@@ -89,15 +111,12 @@ def generate_records(
                         ap_id,
                     ]
                 ))
-
+                
+                # Yield batch when it reaches the specified size
+                if len(records) >= batch_size:
+                    yield pd.DataFrame(np.stack(records), columns=columns)
+                    records = []
     
-    return pd.DataFrame(
-        np.stack(records),
-        columns = [
-            "session_id", "user_mac", "timestamp", "rssi", "noise_floor", "snr",
-            "bytes_in", "bytes_out", "packets_in", "packets_out", "throughput_mbps",
-            "retries", "errors", "tx_power", "rx_power", "tx_rate", "rx_rate",
-            "mcs_tx", "mcs_rx", "assoc_clients", "roam_events", "ap_temperature",
-            "uptime_sec", "fw_version",  "channel", "channel_width", "ap_id",
-        ]
-    )
+    # Yield remaining records if any
+    if records:
+        yield pd.DataFrame(np.stack(records), columns=columns)

@@ -30,6 +30,7 @@ def aggregate_parquet(
         input_path: str, 
         output_path: str, 
         cfg: omegaconf.dictconfig.DictConfig,
+        delete_input: bool = False,
     ) -> None:
     """
     Aggregate Parquet data by access point ID using Polars lazy API.
@@ -77,6 +78,9 @@ def aggregate_parquet(
         .sink_parquet(output_path, compression="zstd", compression_level=9)
     )
 
+    if delete_input:
+        shutil.rmtree(input_path)
+
 @utils.timed
 def parquet_to_db(
     input_path: str, 
@@ -94,12 +98,12 @@ def parquet_to_db(
     utils.create_table()
 
     # add timestamp column
-    df = df.with_column(pl.lit(timestamp).alias("timestamp"))
+    df = df.assign(timestamp=pd.to_datetime(timestamp))
 
     # Create connection config
     cfg = utils.get_ingestion_config()
-
-    with Sender.from_config(cfg) as sender:
+    logging.info(f"Uploading {len(df)} rows to QuestDB table '{table_name}' with config: {cfg}.")
+    with Sender.from_conf(cfg) as sender:
         sender.dataframe(
             df,
             table_name=table_name,
@@ -121,12 +125,14 @@ if __name__ == "__main__":
         csv_to_parquet(
             input_path=str(file), 
             output_path=parquet_path,
+            delete_csv=True,
         )
         aggregated_path = f"data/parquet/aggregated/{filename}.parquet"
         aggregate_parquet(
             input_path=str(parquet_path), 
             output_path=str(aggregated_path), 
             cfg=cfg,
+            delete_input=True,
         )
         parquet_to_db(
             input_path=str(aggregated_path),

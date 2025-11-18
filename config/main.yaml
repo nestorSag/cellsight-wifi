@@ -17,7 +17,7 @@ db:
     db: qdb
   params:
     ingestion_protocol: http
-    ingest_port: 9000
+    ingestion_port: 9000
     query_port: 8812
     table_name: wifi
     indexes:
