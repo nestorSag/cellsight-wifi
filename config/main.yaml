@@ -10,8 +10,19 @@ colnames:
   region: region
 
 db:
-  user: cellsight
-  password: ${oc.env:DB_PASSWORD}
-  db: cellsight
-  host: localhost
-  port: ${oc.env:DB_PORT}
+  auth:
+    username: admin
+    password: quest
+    host: localhost
+    db: qdb
+  params:
+    ingestion_protocol: http
+    ingest_port: 9009
+    query_port: 8812
+    table_name: wifi
+    indexes:
+      - ${colnames.ap_id}
+      - ${colnames.channel}
+      - ${colnames.band}
+      - ${colnames.state}
+      - ${colnames.region}

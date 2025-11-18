@@ -21,5 +21,14 @@ preprocess:
 make env:
 	conda env create -n cellsight -f environment.yaml -p ./env
 
-image:
-	docker build -t cellsight-wifi:$(tag) .
+# image:
+# 	source .env && docker build -t cellsight-wifi:$(tag) --build-arg PWD=$(tag) .
+
+questdb:
+	docker run \
+	  --network host \
+	  -p 9000:9000 \
+	  -p 9009:9009 \
+	  -p 8812:8812 \
+	  -p 9003:9003 \
+	  questdb/questdb:9.2.0

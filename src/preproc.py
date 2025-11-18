@@ -4,7 +4,8 @@ from pathlib import Path
 import logging
 
 import pandas as pd
-from sqlalchemy import create_engine
+import pandas as pd
+from questdb.ingress import Sender
 import omegaconf
 
 import src.utils as utils
@@ -83,20 +84,24 @@ def parquet_to_db(
     timestamp: str,
 ) -> None:
     """
-    Load Parquet data into a SQL database table.
+    Load Parquet data into a questDB table.
     """
 
     # Read Parquet file into Pandas DataFrame
-    df = pd.scan_parquet(input_path)
+    df = pd.read_parquet(input_path)
     
     # add timestamp column
-    df = df.with_column(pl.lit(timestamp).alias("time"))
+    df = df.with_column(pl.lit(timestamp).alias("timestamp"))
 
     # Create database engine
-    engine = create_engine(utils.get_db_connection_string())
+    addr = utils.get_connection_config()
 
-    # Load DataFrame into SQL table
-    df.write_database(table_name, con=engine, if_exists='append', index=False)
+    with Sender.from_config(addr) as sender:
+        sender.dataframe(
+            df,
+            table_name=table_name,
+            at="timestamp",
+        )
 
 
 if __name__ == "__main__":
@@ -120,9 +125,8 @@ if __name__ == "__main__":
             output_path=str(aggregated_path), 
             cfg=cfg,
         )
-        # parquet_to_db(
-        #     str(aggregated_path),
-        #     db_connection_string=utils.get_db_connection(),
-        #     table_name=cfg.db.metrics_table,
-        #     timestamp=file.stem,
-        # )
+        parquet_to_db(
+            input_path=str(aggregated_path),
+            table_name=cfg.db.metrics_table,
+            timestamp=file.stem,
+        )

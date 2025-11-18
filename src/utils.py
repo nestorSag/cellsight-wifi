@@ -1,9 +1,11 @@
 import logging
 import time
+import asyncio
 from pathlib import Path
 
 import dotenv
 from hydra import compose, initialize_config_dir
+import asyncpg as pg
 from omegaconf import OmegaConf
 
 def timed(func):
@@ -34,15 +36,50 @@ def load_config(path: str = "config/main.yaml"):
             OmegaConf.resolve(cfg)  # apply interpolatations
     return cfg
 
-def get_db_connection_string():
+def get_ingestion_config():
     cfg = load_config()
-    user = cfg.db.user
-    password = cfg.db.password
-    host = cfg.db.host
-    port = cfg.db.port
-    database = cfg.db.database
-    return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+    username = cfg.db.auth.username
+    password = cfg.db.auth.password
+    host = cfg.db.auth.host
+    port = cfg.db.params.ingestion_port
+    protocol = cfg.db.params.ingestion_protocol
+    return f"{protocol}::addr={host}:{port};username={username};password={password};"
 
+
+async def query_db(query: str):
+    cfg = load_config()
+    conn = await pg.connect(
+        host=cfg.db.auth.host,
+        port=cfg.db.params.query_port,
+        user=cfg.db.auth.username,
+        password=cfg.db.auth.password,
+        database=cfg.db.auth.db
+    )
+    results = await conn.fetch(query)
+    await conn.close()
+    return results
+
+def create_table() -> None:
+    cfg = load_config()
+    to_index = cfg.db.params.indexes
+    with open("db/schema.sql", "r") as f:
+        schema_sql = f.read()
+
+    # idempotent table creation
+    _ = asyncio.run(query_db(schema_sql))
+
+    # create indexes if not exist
+    query = f"""
+    SELECT "column"
+    FROM table_columns('{cfg.db.params.table_name}')
+    WHERE indexed = true;
+    """
+    indexed = asyncio.run(query_db(query))
+    not_yet_indexed = set(to_index) - {row["column"] for row in indexed}
+    for col in not_yet_indexed:
+        index_sql = f"ALTER TABLE {cfg.db.params.table_name} ALTER COLUMN {col} ADD INDEX;"
+        _ = asyncio.run(query_db(index_sql))
+        logging.info(f"Created index on column {col}.")
 
 class Pipe:
     def __init__(self, value):
