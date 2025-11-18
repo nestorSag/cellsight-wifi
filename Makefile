@@ -4,7 +4,7 @@ CONDA := $(shell command -v mamba >/dev/null 2>&1 && echo mamba || echo $(CONDA)
 n_points=10000000 # 10M
 tag=latest
 
-.PHONY: ap-data hourly-batch preprocess env questdb
+.PHONY: ap-data hourly-batch ingestion env questdb
 
 data/.metadata/access_points/data.parquet: src/data/access_point_generator.py
 	$(CONDA) run -p $$(pwd)/env python -m src.data.access_point_generator \
@@ -24,8 +24,13 @@ daily-batch:
 		make ingestion; \
 	done;
 
+weekly-batch:
+	for i in $$(seq 2 7); do \
+		make daily-batch; \
+	done;
+	
 ingestion: 
-	$(CONDA) run -p $$(pwd)/env python -m src.preproc
+	$(CONDA) run -p $$(pwd)/env python -m src.ingestion
 
 
 env/bin/python:
@@ -46,3 +51,6 @@ questdb:
 	  -e QDB_LINE_HTTP_ENABLED=true \
 	  -e QDB_VM_MAX_MAP_COUNT=1048576 \
 	  questdb/questdb:9.2.0
+
+backend:
+	$(CONDA) run -p $$(pwd)/env uvicorn src.backend:app --host 0.0.0.0 --port 8000 --reload

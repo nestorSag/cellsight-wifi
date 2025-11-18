@@ -13,5 +13,9 @@ dependencies:
   - requests
   - asyncpg
   - pyarrow
+  - fastapi
+  - sqlalchemy
+  - uvicorn
+  - psycopg2
   - pip:
     - questdb

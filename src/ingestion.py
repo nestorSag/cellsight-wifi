@@ -23,7 +23,7 @@ def csv_to_parquet(input_path: str, output_path: str, delete_csv: bool = False) 
     )
     # delete csv
     if delete_csv:
-        shutil.rmtree(input_path)
+        Path(input_path).unlink()
 
 @utils.timed
 def aggregate_parquet(
@@ -79,7 +79,7 @@ def aggregate_parquet(
     )
 
     if delete_input:
-        shutil.rmtree(input_path)
+        Path(input_path).unlink()
 
 @utils.timed
 def parquet_to_db(
@@ -134,8 +134,8 @@ if __name__ == "__main__":
             cfg=cfg,
             delete_input=True,
         )
-        parquet_to_db(
-            input_path=str(aggregated_path),
-            table_name=cfg.db.params.table_name,
-            timestamp=file.stem,
-        )
+        # parquet_to_db(
+        #     input_path=str(aggregated_path),
+        #     table_name=cfg.db.params.table_name,
+        #     timestamp=file.stem,
+        # )
