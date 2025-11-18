@@ -29,7 +29,6 @@ def sample_points_in_polygon(polygon, n_points, batch_size=50000):
     )[:n_points]
 
 def get_state_polygons():
-    logging.info("Fetching state polygons from OSMnx...")
     state_names = [val for key, vals in parameters.region_to_states_map.items() for val in vals]
     state_gdfs = []
     for state in state_names:
@@ -37,6 +36,7 @@ def get_state_polygons():
         state_gdfs.append(state_gdf)
 
     all_states_gdf = gpd.GeoDataFrame(pd.concat(state_gdfs, ignore_index=True))
+    logging.info("fetched state polygons from OSMnx")
     return all_states_gdf.assign(state=state_names)
 
 def sample_locations(n_locations: int):

@@ -90,13 +90,16 @@ def parquet_to_db(
     # Read Parquet file into Pandas DataFrame
     df = pd.read_parquet(input_path)
     
+    # create table if not exit
+    utils.create_table()
+
     # add timestamp column
     df = df.with_column(pl.lit(timestamp).alias("timestamp"))
 
-    # Create database engine
-    addr = utils.get_connection_config()
+    # Create connection config
+    cfg = utils.get_ingestion_config()
 
-    with Sender.from_config(addr) as sender:
+    with Sender.from_config(cfg) as sender:
         sender.dataframe(
             df,
             table_name=table_name,
@@ -127,6 +130,6 @@ if __name__ == "__main__":
         )
         parquet_to_db(
             input_path=str(aggregated_path),
-            table_name=cfg.db.metrics_table,
+            table_name=cfg.db.params.table_name,
             timestamp=file.stem,
         )

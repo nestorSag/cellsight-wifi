@@ -84,7 +84,7 @@ def persist_data(
         n_records_per_session=n_records_per_session,
     )
     output_path = Path(f"data/csv/{base_time}.csv")
-    logging.info(f"Persisting data to {output_path}...")
+    logging.info(f"Persisting {len(data)} records to {output_path}...")
     data.to_csv(output_path, index=False)
     bump_current_time(hours=1)
     

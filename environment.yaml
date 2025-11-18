@@ -10,7 +10,8 @@ dependencies:
   - hydra-core
   - python-dotenv
   - h3-py
-  - requestsq
+  - requests
   - asyncpg
+  - pyarrow
   - pip:
     - questdb
