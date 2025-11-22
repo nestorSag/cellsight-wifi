@@ -86,6 +86,7 @@ def parquet_to_db(
     input_path: str, 
     table_name: str,
     timestamp: str,
+    delete_input: bool = False,
 ) -> None:
     """
     Load Parquet data into a questDB table.
@@ -109,6 +110,9 @@ def parquet_to_db(
             table_name=table_name,
             at="timestamp",
         )
+
+    if delete_input:
+        Path(input_path).unlink()
 
 
 if __name__ == "__main__":
@@ -138,4 +142,5 @@ if __name__ == "__main__":
         #     input_path=str(aggregated_path),
         #     table_name=cfg.db.params.table_name,
         #     timestamp=file.stem,
+        #     delete_input=False,
         # )

@@ -21,7 +21,7 @@ db:
     query_port: 8812
     table_name: wifi
     indexes:
-      - ${colnames.ap_id}
+      # - ${colnames.ap_id}
       - ${colnames.channel}
       - ${colnames.band}
       - ${colnames.state}
