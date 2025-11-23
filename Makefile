@@ -53,5 +53,13 @@ questdb:
 	  -v $$(pwd)/data/questdb:/var/lib/questdb \
 	  questdb/questdb:9.2.0
 
+clickhouse:
+	curl https://clickhouse.com/ | sh
+
+clickhouse-server: clickhouse
+	mkdir -p data/clickhouse
+	./clickhouse server -- --path $$(pwd)/data/clickhouse/
+
+
 backend:
 	$(CONDA) run -p $$(pwd)/env uvicorn src.backend:app --host 0.0.0.0 --port 8000 --reload

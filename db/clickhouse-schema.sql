@@ -1,0 +1,50 @@
+CREATE TABLE IF NOT EXISTS wifi
+(
+    timestamp DateTime64(6),
+    ap_id String,
+    avg_rssi Float64,
+    unique_sessions Int32,
+    max_noise_floor Float64,
+    avg_noise_floor Float64,
+    avg_snr Float64,
+    total_bytes_in Int64,
+    total_bytes_out Int64,
+    total_packets_in Int64,
+    total_packets_out Int64,
+    avg_throughput_mbps Float64,
+    total_retries Int64,
+    total_errors Int64,
+    avg_tx_power Float64,
+    avg_rx_power Float64,
+    avg_tx_rate Float64,
+    avg_rx_rate Float64,
+    avg_mcs_tx Float64,
+    avg_mcs_rx Float64,
+    max_assoc_clients Int32,
+    total_roam_events Int32,
+    avg_ap_temperature Float64,
+    max_uptime_sec Int64,
+    fw_version LowCardinality(String),
+    channel LowCardinality(String),
+    channel_width LowCardinality(String),
+    longitude Float64,
+    latitude Float64,
+    state LowCardinality(String),
+    region LowCardinality(String),
+    band LowCardinality(String),
+    vendor_source LowCardinality(String),
+    vendor_name LowCardinality(String),
+    model LowCardinality(String),
+    ssid LowCardinality(String),
+    
+    INDEX ap_id_bloom ap_id TYPE bloom_filter(0.01) GRANULARITY 4,
+    INDEX state_set state TYPE set(0) GRANULARITY 4,
+    INDEX region_set region TYPE set(0) GRANULARITY 4,
+    INDEX band_set band TYPE set(0) GRANULARITY 4,
+    INDEX channel_set channel TYPE set(0) GRANULARITY 4
+)
+ENGINE = MergeTree()
+PARTITION BY toYYYYMMDD(timestamp)
+ORDER BY toStartOfHour(timestamp)
+SETTINGS index_granularity = 8192,
+         index_granularity_bytes = 10485760;

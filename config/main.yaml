@@ -10,19 +10,28 @@ colnames:
   region: region
 
 db:
-  auth:
-    username: admin
-    password: quest
-    host: localhost
-    db: qdb
-  params:
-    ingestion_protocol: http
-    ingestion_port: 9000
-    query_port: 8812
-    table_name: wifi
-    indexes:
-      # - ${colnames.ap_id}
-      - ${colnames.channel}
-      - ${colnames.band}
-      - ${colnames.state}
-      - ${colnames.region}
+  questdb:
+    auth:
+      username: admin
+      password: quest
+      host: localhost
+      db: qdb
+    params:
+      ingestion_protocol: http
+      ingestion_port: 9000
+      query_port: 8812
+      table_name: wifi
+      indexes:
+        # - ${colnames.ap_id}
+        - ${colnames.channel}
+        - ${colnames.band}
+        - ${colnames.state}
+        - ${colnames.region}
+  clickhouse:
+    auth:
+      username: default
+      password: ""
+      host: localhost
+      port: 8123
+    params:
+      table_name: wifi

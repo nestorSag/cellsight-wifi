@@ -1,4 +1,7 @@
 *.pyc
-./data/
-.env/
+data/*
+env/*
+clickhouse
 *.log
+logs
+cache/*

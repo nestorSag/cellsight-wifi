@@ -82,7 +82,7 @@ def aggregate_parquet(
         Path(input_path).unlink()
 
 @utils.timed
-def parquet_to_db(
+def parquet_to_questdb(
     input_path: str, 
     table_name: str,
     timestamp: str,
@@ -93,10 +93,13 @@ def parquet_to_db(
     """
 
     # Read Parquet file into Pandas DataFrame
-    df = pd.read_parquet(input_path)
+    # apply type casting
+    df = (pd
+        .read_parquet(input_path)
+    )
     
     # create table if not exit
-    utils.create_table()
+    utils.create_questdb_table()
 
     # add timestamp column
     df = df.assign(timestamp=pd.to_datetime(timestamp))
@@ -114,6 +117,44 @@ def parquet_to_db(
     if delete_input:
         Path(input_path).unlink()
 
+
+@utils.timed
+def parquet_to_clickhouse(
+    input_path: str, 
+    table_name: str,
+    timestamp: str,
+    delete_input: bool = False,
+) -> None:
+    """
+    Load Parquet data into a ClickHouse table.
+    """
+
+    # Read Parquet file into Pandas DataFrame
+    df = (pd
+        .read_parquet(input_path)
+        .assign(
+            ap_id = lambda x: x['ap_id'].astype(str),
+            channel = lambda x: x['channel'].astype(str),
+            channel_width = lambda x: x['channel_width'].astype(str),
+        )
+    )
+    
+    # create table if not exit
+    utils.create_clickhouse_table()
+
+    # add timestamp column
+    df = df.assign(timestamp=pd.to_datetime(timestamp))
+
+    # Create connection config
+    logging.info(f"Uploading {len(df)} rows to ClickHouse table '{table_name}'.")
+    client = utils.get_clickhouse_client()
+    client.insert_df(
+        table=table_name,
+        df=df,
+    )
+
+    if delete_input:
+        Path(input_path).unlink()
 
 if __name__ == "__main__":
     # log to stdout and append to log file
@@ -138,9 +179,15 @@ if __name__ == "__main__":
             cfg=cfg,
             delete_input=True,
         )
-        # parquet_to_db(
+        # parquet_to_questdb(
         #     input_path=str(aggregated_path),
-        #     table_name=cfg.db.params.table_name,
+        #     table_name=cfg.db.questdb.params.table_name,
         #     timestamp=file.stem,
         #     delete_input=False,
         # )
+        parquet_to_clickhouse(
+            input_path=str(aggregated_path),
+            table_name=cfg.db.clickhouse.params.table_name,
+            timestamp=file.stem,
+            delete_input=False,
+        )

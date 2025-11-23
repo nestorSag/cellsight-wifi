@@ -33,7 +33,7 @@ def get_db_session():
     if engine is None:
         # Load configuration
         cfg = load_config()
-        db_config = cfg.db
+        db_config = cfg.db.questdb
         
         # Create database connection
         connection_string = (
